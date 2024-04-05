@@ -1,0 +1,127 @@
+name: Build, Test, Deploy
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  smoke-tests:
+    if: |
+      github.event_name == 'push'
+      || github.event_name == 'release'
+      || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)
+      || github.event_name == 'workflow_dispatch'
+
+    outputs:
+      GIT_TAG: ${{ steps.variables.outputs.GIT_TAG }}
+      GIT_BRANCH: ${{ steps.variables.outputs.GIT_BRANCH }}
+      OUTPUT_DIR: ${{ steps.variables.outputs.OUTPUT_DIR }}
+
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout code
+        uses: actions/checkout@v4.1.2
+      -
+        name: "Calculate required variables"
+        id: variables
+        run: |
+          GIT_TAG=${{ github.event.release.tag_name }}
+          # If GIT_TAG is set then GIT BRANCH should be "master", else set it from GITHUB_REF
+          GIT_BRANCH=$([ -n "${GIT_TAG}" ] && echo "master" || echo "${GITHUB_REF#refs/*/}")
+          echo "GIT_BRANCH=${GIT_BRANCH}" >> $GITHUB_OUTPUT
+          echo "GIT_TAG=${GIT_TAG}" >> $GITHUB_OUTPUT
+          echo "OUTPUT_DIR=${GIT_TAG:-${GIT_BRANCH}}" >> $GITHUB_OUTPUT
+      -
+        name: "Check git branch name depth"
+        env:
+          GIT_BRANCH: ${{ steps.variables.outputs.GIT_BRANCH }}
+        run: |
+          IFS='/';
+          read -r -a branch <<<"${GIT_BRANCH}";
+          if [[ "${#branch[@]}" -gt 2 ]]; then echo "Error: Your branch name contains more than one subdir, which will cause issues with the build process." && FAIL=1; fi;
+          unset IFS;
+          # If FAIL is 1 then we fail.
+          [[ $FAIL == 1 ]] && exit 1 || echo "Branch name depth check passed."
+        shell: bash
+
+  gha:
+    runs-on: ubuntu-latest
+    needs: smoke-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            bin_name: pihole-FTL-amd64
+          - platform: linux/386
+            bin_name: pihole-FTL-386
+          - platform: linux/riscv64
+            bin_name: pihole-FTL-riscv64
+    env:
+      CI_ARCH: ${{ matrix.platform }}
+      GIT_BRANCH: ${{ needs.smoke-tests.outputs.GIT_BRANCH }}
+      GIT_TAG: ${{ needs.smoke-tests.outputs.GIT_TAG }}
+    steps:
+      -
+        name: Checkout code
+        uses: actions/checkout@v4.1.2
+      -
+        name: Build and test and deploy FTL
+        uses: ./.github/actions/build-and-test
+        with:
+          platform: ${{ matrix.platform }}
+          bin_name: ${{ matrix.bin_name }}
+          artifact_name: ${{ matrix.bin_name }}-binary
+          target_dir: ${{ needs.smoke-tests.outputs.OUTPUT_DIR }}
+          git_branch: ${{ needs.smoke-tests.outputs.GIT_BRANCH }}
+          git_tag: ${{ needs.smoke-tests.outputs.GIT_TAG }}
+          event_name: ${{ github.event_name }}
+          actor: ${{ github.actor }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.KNOWN_HOSTS }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+
+  self-hosted:
+    runs-on: self-hosted
+    needs: smoke-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/arm/v6
+            bin_name: pihole-FTL-armv6
+          - platform: linux/arm/v7
+            bin_name: pihole-FTL-armv7
+          - platform: linux/arm64/v8
+            bin_name: pihole-FTL-arm64
+    env:
+      CI_ARCH: ${{ matrix.platform }}
+      GIT_BRANCH: ${{ needs.smoke-tests.outputs.GIT_BRANCH }}
+      GIT_TAG: ${{ needs.smoke-tests.outputs.GIT_TAG }}
+    steps:
+      -
+        name: Checkout code
+        uses: actions/checkout@v4.1.2
+      -
+        name: Build and test and deploy FTL
+        uses: ./.github/actions/build-and-test
+        with:
+          platform: ${{ matrix.platform }}
+          bin_name: ${{ matrix.bin_name }}
+          artifact_name: ${{ matrix.bin_name }}-binary
+          target_dir: ${{ needs.smoke-tests.outputs.OUTPUT_DIR }}
+          git_branch: ${{ needs.smoke-tests.outputs.GIT_BRANCH }}
+          git_tag: ${{ needs.smoke-tests.outputs.GIT_TAG }}
+          event_name: ${{ github.event_name }}
+          actor: ${{ github.actor }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.KNOWN_HOSTS }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
