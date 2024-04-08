@@ -83,7 +83,7 @@ static void _query_set_dnssec(queriesData *query, const enum dnssec_status dnsse
 static char *get_ptrname(struct in_addr *addr);
 static const char *check_dnsmasq_name(const char *name);
 static bool set_socket_timeout(int sockfd, int timeout_ms);
-static bool notBlocked(int queryID, int clientID, int domainID, const unsigned short qtype);
+static bool notBlocked(int clientID, int domainID, const unsigned short qtype);
 
 // Static blocking metadata
 static bool adbit = false;
@@ -3532,14 +3532,13 @@ void get_dnsmasq_metrics_obj(cJSON *json)
 		cJSON_AddNumberToObject(json, get_metric_name(i), daemon->metrics[i]);
 }
 
-bool notBlocked (int queryID, int clientID, int domainID, const unsigned short qtype){
+bool notBlocked (int clientID, int domainID, const unsigned short qtype){
 	if(get_blockingstatus() == BLOCKING_DISABLED)
 	{
 		return false;
 	}
 
 	// Get query, domain and client pointers
-	queriesData *query  = getQuery(queryID, true);
 	domainsData *domain = getDomain(domainID, true);
 	clientsData *client = getClient(clientID, true);
 	if(domain == NULL || client == NULL)
@@ -3618,7 +3617,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	domainsData *domain = getDomain(domainID, true);
 	queriesData *query  = getQuery(queryID, true);
 	
-	bool whitelisted = notBlocked(queryID, clientID, domainID, qtype);
+	bool whitelisted = notBlocked(clientID, domainID, qtype);
 	free(domainString);
 	unlock_shm();
 
