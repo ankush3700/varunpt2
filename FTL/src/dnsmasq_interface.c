@@ -83,6 +83,7 @@ static void _query_set_dnssec(queriesData *query, const enum dnssec_status dnsse
 static char *get_ptrname(struct in_addr *addr);
 static const char *check_dnsmasq_name(const char *name);
 static bool set_socket_timeout(int sockfd, int timeout_ms);
+static bool notBlocked(int queryID, int clientID, int domainID);
 
 // Static blocking metadata
 static bool adbit = false;
@@ -3531,48 +3532,113 @@ void get_dnsmasq_metrics_obj(cJSON *json)
 		cJSON_AddNumberToObject(json, get_metric_name(i), daemon->metrics[i]);
 }
 
-/* Changes */
-bool FTL_model_query(const char* domain, union mysockaddr *addr){
-	// Sending domain name to localhost:5336 to check domain credibility
-	// If the domain is credible, return false, else return true
-	domain = check_dnsmasq_name(domain);
-	char clientIP[ADDRSTRLEN+1] = { 0 };
-	in_port_t clientPort = daemon->port;
-	
-	if (is_pihole_domain(domain)){
+bool notBlocked (int queryID, int clientID, int domainID){
+	if(get_blockingstatus() == BLOCKING_DISABLED)
+	{
 		return false;
 	}
 
-	char *domainString = strdup(domain);
+	// Get query, domain and client pointers
+	queriesData *query  = getQuery(queryID, true);
+	domainsData *domain = getDomain(domainID, true);
+	clientsData *client = getClient(clientID, true);
+	if(query == NULL || domain == NULL || client == NULL)
+	{
+		log_err("No memory available, skipping query analysis");
+		return false;
+	}
+
+	// Get cache pointer
+	// When this function is called with a different domain than the one
+	// already stored in the query, we have to re-lookup the cache ID.
+	// This can happen when a CNAME chain is followed and analyzed
+	const int cacheID = query->domainID == domainID && query->clientID == clientID ?
+	                    query->cacheID :
+	                    findCacheID(domainID, clientID, query->type, true);
+	DNSCacheData *dns_cache = getDNSCache(cacheID, true);
+	if(dns_cache == NULL)
+	{
+		log_err("No memory available, skipping query analysis");
+		return true;
+	}
+	unsigned char blockingStatus = dns_cache->blocking_status;
+	char *domainstr = (char*)getstr(domain->domainpos);
+
+	if (blockingStatus == ALLOWED){
+		log_debug(DEBUG_QUERIES, "%s is known as not to be blocked (allowed)", domainstr);
+		return true;
+	}
+	domainstr = strdup(domainstr);
+	const char *blockedDomain = domainstr;
+
+	bool whitelisted = in_allowlist(domainstr, dns_cache, client) == FOUND;
+	if (!whitelisted){
+		whitelisted = in_regex(domainstr, dns_cache, client->id, REGEX_ALLOW);
+	}
+
+	free(domainstr);
+	return whitelisted;
+
+}
+
+/* Changes */
+bool FTL_model_query(const char* name, union mysockaddr *addr){
+	// Sending domain name to localhost:5336 to check domain credibility
+	// If the domain is credible, return false, else return true
+
+	name = check_dnsmasq_name(name);
+
+	if (is_pihole_domain(name)){
+		return false;
+	}
+	char *domainString = strdup(name);
 	strtolower(domainString);
+
+	char clientIP[ADDRSTRLEN+1] = { 0 };
+	in_port_t clientPort = daemon->port;
+	
 	if(addr){
 		mysockaddr_extract_ip_port(addr, clientIP, &clientPort);
 	} else {
 		return false;
 	}
+
 	lock_shm();
 	const int queryID = counters->queries;
-	const int domainID = findDomainID(domainString, true);
-	// Find client IP
-	queriesData *query  = getQuery(queryID, true);
 	const int clientID = findClientID(clientIP, true, false);
-	unsigned int cacheID = findCacheID(domainID, clientID, query->type, true);
-	DNSCacheData *dns_cache = getDNSCache(cacheID, true);
-
 	clientsData *client = getClient(clientID, true);
-	bool whitelisted = in_whitelist(domainString, dns_cache, client) == FOUND;
-	if (whitelisted){
+	if(client == NULL)
+	{
+		// Encountered memory error, skip query
+		// Free allocated memory
 		free(domainString);
-		unlock_shm();
-		return false;
-	} else if (in_regex(domainstr, dns_cache, client->id, REGEX_WHITELIST)){
-		free(domainString);
+		// Release thread lock
 		unlock_shm();
 		return false;
 	}
+	
+	const int domainID = findDomainID(domainString, true);
+	domainsData *domain = getDomain(domainID, true);
+	queriesData *query  = getQuery(queryID, true);
+	if(query == NULL)
+	{
+		// Encountered memory error, skip query
+		log_err("No memory available, skipping query analysis");
+		// Free allocated memory
+		free(domainString);
+		// Release thread lock
+		unlock_shm();
+		return false;
+	}
+	
+	bool whitelisted = notBlocked(queryID, clientID, domainID);
 	free(domainString);
 	unlock_shm();
-	
+
+	if (whitelisted){
+		return true;
+	}
+
 	// Create a socket
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)
@@ -3607,7 +3673,7 @@ bool FTL_model_query(const char* domain, union mysockaddr *addr){
     }
 
 	// Send the domain name to the server
-	if (send(sockfd, domain, strlen(domain), 0) < 0)
+	if (send(sockfd, name, strlen(name), 0) < 0)
 	{
 		printf("Error sending domain name\n");
 		return false;
@@ -3631,7 +3697,9 @@ bool FTL_model_query(const char* domain, union mysockaddr *addr){
 		bool received_bool = (buffer[0] == '1') ? true : false;
 		close(sockfd);
 		if (received_bool){
+			lock_shm();
 			query_blocked(query, domain, client, QUERY_SPECIAL_DOMAIN);
+			unlock_shm();
 		}
 		return received_bool;
 	}
