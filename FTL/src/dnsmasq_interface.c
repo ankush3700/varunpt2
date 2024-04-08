@@ -82,7 +82,7 @@ static void check_pihole_PTR(char *domain);
 static void _query_set_dnssec(queriesData *query, const enum dnssec_status dnssec, const char *file, const int line);
 static char *get_ptrname(struct in_addr *addr);
 static const char *check_dnsmasq_name(const char *name);
-static bool set_socket_timeout(int sockfd, int timeout_ms)
+static bool set_socket_timeout(int sockfd, int timeout_ms);
 
 // Static blocking metadata
 static bool adbit = false;
