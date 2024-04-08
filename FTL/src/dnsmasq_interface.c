@@ -3569,7 +3569,6 @@ bool notBlocked (int queryID, int clientID, int domainID){
 		return true;
 	}
 	domainstr = strdup(domainstr);
-	const char *blockedDomain = domainstr;
 
 	bool whitelisted = in_allowlist(domainstr, dns_cache, client) == FOUND;
 	if (!whitelisted){
