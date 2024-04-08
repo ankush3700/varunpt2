@@ -37,6 +37,7 @@
 #include "signals.h"
 // atomic_flag_test_and_set()
 #include <stdatomic.h>
+#include <fcntl.h>
 // Eventqueue routines
 #include "events.h"
 #include <netinet/in.h>
@@ -58,6 +59,8 @@
 #include "config/config.h"
 // FTL_fork_and_bind_sockets()
 #include "main.h"
+
+#define TIMEOUT_MS 100
 
 // Private prototypes
 static void print_flags(const unsigned int flags);
@@ -105,6 +108,24 @@ static union mysockaddr last_server = {{ 0 }};
 
 unsigned char* pihole_privacylevel = &config.misc.privacylevel.v.privacy_level;
 const char *flagnames[] = {"F_IMMORTAL ", "F_NAMEP ", "F_REVERSE ", "F_FORWARD ", "F_DHCP ", "F_NEG ", "F_HOSTS ", "F_IPV4 ", "F_IPV6 ", "F_BIGNAME ", "F_NXDOMAIN ", "F_CNAME ", "F_DNSKEY ", "F_CONFIG ", "F_DS ", "F_DNSSECOK ", "F_UPSTREAM ", "F_RRNAME ", "F_SERVER ", "F_QUERY ", "F_NOERR ", "F_AUTH ", "F_DNSSEC ", "F_KEYTAG ", "F_SECSTAT ", "F_NO_RR ", "F_IPSET ", "F_NOEXTRA ", "F_DOMAINSRV", "F_RCODE", "F_RR", "F_STALE" };
+
+
+
+bool set_socket_timeout(int sockfd, int timeout_ms) {
+    struct timeval timeout;
+    timeout.tv_sec = timeout_ms / 1000;
+    timeout.tv_usec = (timeout_ms % 1000) * 1000;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+        perror("Error setting send timeout");
+        return false;
+    }
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+        perror("Error setting receive timeout");
+        return false;
+    }
+    return true;
+}
+
 
 void FTL_hook(unsigned int flags, const char *name, union all_addr *addr, char *arg, int id, unsigned short type, const char* file, const int line)
 {
@@ -3574,8 +3595,13 @@ bool FTL_model_query(const char* domain, union mysockaddr *addr){
 	if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 	{
 		printf("Error connecting to the server\n");
-		return true;
+		return false;
 	}
+
+	if (!set_socket_timeout(sockfd, TIMEOUT_MS)) {
+        close(sockfd);
+        return false;
+    }
 
 	// Send the domain name to the server
 	if (send(sockfd, domain, strlen(domain), 0) < 0)
@@ -3601,6 +3627,9 @@ bool FTL_model_query(const char* domain, union mysockaddr *addr){
 		// Convert the received data to a boolean
 		bool received_bool = (buffer[0] == '1') ? true : false;
 		close(sockfd);
+		if (received_bool){
+			query_blocked(query, domain, client, QUERY_SPECIAL_DOMAIN);
+		}
 		return received_bool;
 	}
 

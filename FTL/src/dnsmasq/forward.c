@@ -1998,7 +1998,7 @@ void receive_query(struct listener *listen, time_t now)
 	  if (m == 0)
 	    {
 	      blockdata_retrieve(saved_question, (size_t)n, header);
-	      modelblocked = FTL_model_query(daemon->namebuff);
+	      modelblocked = FTL_model_query(daemon->namebuff, &source_addr);
 	      if (forward_query(fd, &source_addr, &dst_addr, if_index,
 				header, (size_t)n,  ((char *) header) + udp_size, now, NULL, ad_reqd, do_bit, 0))
 		daemon->metrics[METRIC_DNS_QUERIES_FORWARDED]++;
