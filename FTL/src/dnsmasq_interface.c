@@ -3682,9 +3682,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		// Convert the received data to a boolean
 		bool received_bool = (buffer[0] == '1') ? true : false;
 		close(sockfd);
-		char* resp;
 		if (received_bool){
-			resp = (received_bool == true) ? "True": "False";
+			const char* resp = (received_bool != 0) ? "true" : "false";
 			log_err("%s recieved", resp);
 			lock_shm();
 			query_blocked(query, domain, client, QUERY_SPECIAL_DOMAIN);
