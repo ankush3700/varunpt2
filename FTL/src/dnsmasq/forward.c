@@ -2016,17 +2016,6 @@ void receive_query(struct listener *listen, time_t now)
 					// Check if this query is to be dropped. If so, return immediately without sending anything
 					if (n == 0)
 						return;
-
-					if (have_pseudoheader)
-					{
-						u16 swap = htons(ede);
-						if (ede != EDE_UNSET) // Add EDNS0 option EDE if applicable
-							n = add_pseudoheader(header, n, ((unsigned char *)header) + udp_size,
-												 daemon->edns_pktsz, EDNS0_OPTION_EDE, (unsigned char *)&swap, 2, do_bit, 0);
-						else
-							n = add_pseudoheader(header, n, ((unsigned char *)header) + udp_size,
-												 daemon->edns_pktsz, 0, NULL, 0, do_bit, 0);
-					}
 					send_from(listen->fd, option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND),
 							  (char *)header, (size_t)n, &source_addr, &dst_addr, if_index);
 					daemon->metrics[METRIC_DNS_LOCAL_ANSWERED]++;
