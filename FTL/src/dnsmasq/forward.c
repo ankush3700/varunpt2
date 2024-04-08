@@ -1809,6 +1809,7 @@ void receive_query(struct listener *listen, time_t now)
 							 &source_addr, auth_dns ? "auth" : "query", type);
 		piholeblocked = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
 									  &source_addr, auth_dns ? "auth" : "query", type, daemon->log_display_id, UDP);
+		modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type);
 
 #ifdef HAVE_CONNTRACK
 		is_single_query = 1;
@@ -1923,7 +1924,7 @@ void receive_query(struct listener *listen, time_t now)
 			ad_reqd = 1;
 
 		/************ Pi-hole modification ************/
-		if (piholeblocked)
+		if (piholeblocked || modelblocked)
 		{
 			// Generate DNS packet for reply
 			int ede = EDE_UNSET;
@@ -2004,8 +2005,7 @@ void receive_query(struct listener *listen, time_t now)
 			if (m == 0)
 			{
 				blockdata_retrieve(saved_question, (size_t)n, header);
-				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type);
-				if (modelblocked)
+				if (false)
 				{
 					// Generate DNS packet for reply
 					int ede = EDE_UNSET;
