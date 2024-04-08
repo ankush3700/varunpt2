@@ -83,7 +83,7 @@ static void _query_set_dnssec(queriesData *query, const enum dnssec_status dnsse
 static char *get_ptrname(struct in_addr *addr);
 static const char *check_dnsmasq_name(const char *name);
 static bool set_socket_timeout(int sockfd, int timeout_ms);
-static bool notBlocked(int queryID, int clientID, int domainID);
+static bool notBlocked(int queryID, int clientID, int domainID, const unsigned short qtype);
 
 // Static blocking metadata
 static bool adbit = false;
@@ -3532,7 +3532,7 @@ void get_dnsmasq_metrics_obj(cJSON *json)
 		cJSON_AddNumberToObject(json, get_metric_name(i), daemon->metrics[i]);
 }
 
-bool notBlocked (int queryID, int clientID, int domainID){
+bool notBlocked (int queryID, int clientID, int domainID, const unsigned short qtype){
 	if(get_blockingstatus() == BLOCKING_DISABLED)
 	{
 		return false;
@@ -3542,7 +3542,7 @@ bool notBlocked (int queryID, int clientID, int domainID){
 	queriesData *query  = getQuery(queryID, true);
 	domainsData *domain = getDomain(domainID, true);
 	clientsData *client = getClient(clientID, true);
-	if(query == NULL || domain == NULL || client == NULL)
+	if(domain == NULL || client == NULL)
 	{
 		log_err("No memory available, skipping query analysis");
 		return false;
@@ -3552,9 +3552,7 @@ bool notBlocked (int queryID, int clientID, int domainID){
 	// When this function is called with a different domain than the one
 	// already stored in the query, we have to re-lookup the cache ID.
 	// This can happen when a CNAME chain is followed and analyzed
-	const int cacheID = query->domainID == domainID && query->clientID == clientID ?
-	                    query->cacheID :
-	                    findCacheID(domainID, clientID, query->type, true);
+	const int cacheID = findCacheID(domainID, clientID, qtype, true);
 	DNSCacheData *dns_cache = getDNSCache(cacheID, true);
 	if(dns_cache == NULL)
 	{
@@ -3581,7 +3579,7 @@ bool notBlocked (int queryID, int clientID, int domainID){
 }
 
 /* Changes */
-bool FTL_model_query(const char* name, union mysockaddr *addr){
+bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned short qtype){
 	// Sending domain name to localhost:5336 to check domain credibility
 	// If the domain is credible, return false, else return true
 
@@ -3619,18 +3617,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr){
 	const int domainID = findDomainID(domainString, true);
 	domainsData *domain = getDomain(domainID, true);
 	queriesData *query  = getQuery(queryID, true);
-	if(query == NULL)
-	{
-		// Encountered memory error, skip query
-		log_err("No memory available, skipping query");
-		// Free allocated memory
-		free(domainString);
-		// Release thread lock
-		unlock_shm();
-		return false;
-	}
 	
-	bool whitelisted = notBlocked(queryID, clientID, domainID);
+	bool whitelisted = notBlocked(queryID, clientID, domainID, qtype);
 	free(domainString);
 	unlock_shm();
 
