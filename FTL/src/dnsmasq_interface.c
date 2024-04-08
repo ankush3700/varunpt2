@@ -3680,7 +3680,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		buffer[bytes_received] = '\0'; // Null-terminate the received data
 
 		// Convert the received data to a boolean
-		log_err("%s recieved", buffer[:bytes_received]);
+		log_err("%s recieved", buffer);
 		bool received_bool = (buffer[0] == '1') ? true : false;
 		close(sockfd);
 		const char* resp = (received_bool != 0) ? "true" : "false";
