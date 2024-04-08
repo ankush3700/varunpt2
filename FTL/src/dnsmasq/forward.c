@@ -1809,7 +1809,7 @@ void receive_query(struct listener *listen, time_t now)
 							 &source_addr, auth_dns ? "auth" : "query", type);
 		piholeblocked = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
 									  &source_addr, auth_dns ? "auth" : "query", type, daemon->log_display_id, UDP);
-		modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type);
+		
 
 #ifdef HAVE_CONNTRACK
 		is_single_query = 1;
@@ -1924,7 +1924,7 @@ void receive_query(struct listener *listen, time_t now)
 			ad_reqd = 1;
 
 		/************ Pi-hole modification ************/
-		if (piholeblocked || modelblocked)
+		if (piholeblocked)
 		{
 			// Generate DNS packet for reply
 			int ede = EDE_UNSET;
@@ -2005,22 +2005,8 @@ void receive_query(struct listener *listen, time_t now)
 			if (m == 0)
 			{
 				blockdata_retrieve(saved_question, (size_t)n, header);
-				if (false)
-				{
-					// Generate DNS packet for reply
-					int ede = EDE_UNSET;
-					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
-					// The pseudoheader may contain important information such as EDNS0 version important for
-					// some DNS resolvers (such as systemd-resolved) to work properly. We should not discard them.
+				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type);
 
-					// Check if this query is to be dropped. If so, return immediately without sending anything
-					if (n == 0)
-						return;
-					send_from(listen->fd, option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND),
-							  (char *)header, (size_t)n, &source_addr, &dst_addr, if_index);
-					daemon->metrics[METRIC_DNS_LOCAL_ANSWERED]++;
-					return;
-				}
 				if (forward_query(fd, &source_addr, &dst_addr, if_index,
 								  header, (size_t)n, ((char *)header) + udp_size, now, NULL, ad_reqd, do_bit, 0))
 					daemon->metrics[METRIC_DNS_QUERIES_FORWARDED]++;
