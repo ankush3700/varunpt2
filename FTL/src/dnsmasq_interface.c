@@ -3667,7 +3667,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	else
 	{
 		// Assuming sockfd is the socket file descriptor
-		char buffer[1000]; // Buffer to store the received data
+		char buffer[2]; // Buffer to store the received data
 
 		// Receive data from the server
 		int bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
