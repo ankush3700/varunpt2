@@ -3510,10 +3510,45 @@ void get_dnsmasq_metrics_obj(cJSON *json)
 }
 
 /* Changes */
-bool FTL_model_query(char* domain){
+bool FTL_model_query(const char* domain, union mysockaddr *addr){
 	// Sending domain name to localhost:5336 to check domain credibility
 	// If the domain is credible, return false, else return true
+	domain = check_dnsmasq_name(domain);
+	char clientIP[ADDRSTRLEN+1] = { 0 };
+	if (is_pihole_domain(name)){
+		return false;
+	}
 
+	char *domainString = strdup(domain);
+	strtolower(domainString);
+	if(addr){
+		mysockaddr_extract_ip_port(addr, clientIP, &clientPort);
+	} else {
+		return false;
+	}
+	lock_shm();
+	const int queryID = counters->queries;
+	const int domainID = findDomainID(domainString, true);
+	// Find client IP
+	queriesData *query  = getQuery(queryID, true);
+	const int clientID = findClientID(clientIP, true, false);
+	unsigned int cacheID = findCacheID(domainID, clientID, query->type, true);
+	DNSCacheData *dns_cache = getDNSCache(cacheID, true);
+
+	clientsData *client = getClient(clientID, true);
+	bool whitelisted = in_whitelist(domainString, dns_cache, client) == FOUND;
+	if (whitelisted){
+		free(domainString);
+		unlock_shm();
+		return false;
+	} else if (in_regex(domainstr, dns_cache, client->id, REGEX_WHITELIST)){
+		free(domainString);
+		unlock_shm();
+		return false;
+	}
+	free(domainString);
+	unlock_shm();
+	
 	// Create a socket
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)
