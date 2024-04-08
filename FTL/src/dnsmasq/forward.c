@@ -1572,7 +1572,7 @@ void receive_query(struct listener *listen, time_t now)
 
   /************ Pi-hole modification ************/
   bool piholeblocked = false;
-  bool modelblocked = false;
+//   bool modelblocked = false;
   /**********************************************/
   
   /* packet buffer overwritten */

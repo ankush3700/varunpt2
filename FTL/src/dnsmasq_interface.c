@@ -82,6 +82,7 @@ static void check_pihole_PTR(char *domain);
 static void _query_set_dnssec(queriesData *query, const enum dnssec_status dnssec, const char *file, const int line);
 static char *get_ptrname(struct in_addr *addr);
 static const char *check_dnsmasq_name(const char *name);
+static bool set_socket_timeout(int sockfd, int timeout_ms)
 
 // Static blocking metadata
 static bool adbit = false;
@@ -3536,7 +3537,9 @@ bool FTL_model_query(const char* domain, union mysockaddr *addr){
 	// If the domain is credible, return false, else return true
 	domain = check_dnsmasq_name(domain);
 	char clientIP[ADDRSTRLEN+1] = { 0 };
-	if (is_pihole_domain(name)){
+	in_port_t clientPort = daemon->port;
+	
+	if (is_pihole_domain(domain)){
 		return false;
 	}
 
