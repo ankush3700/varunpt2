@@ -3615,7 +3615,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	
 	const int domainID = findDomainID(domainString, true);
 	domainsData *domain = getDomain(domainID, true);
-	queriesData *query  = getQuery(queryID, true);
 	
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
 	free(domainString);
