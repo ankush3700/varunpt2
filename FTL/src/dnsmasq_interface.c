@@ -3682,9 +3682,10 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
 	free(domainString);
+	unlock_shm();
 
 	if (whitelisted){
-		unlock_shm();
+		
 		return true;
 	}
 	// Create a socket
@@ -3692,7 +3693,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (sockfd < 0)
 	{
 		log_err("Error creating socket\n");
-		unlock_shm();
 		return false;
 	}
 	// Sending domain name to localhost:5336
@@ -3704,7 +3704,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (inet_pton(AF_INET, "127.0.0.1", &server_ip) <= 0)
 	{
 		log_err("Invalid server IP address\n");
-		unlock_shm();
 		return false;
 	}
 
@@ -3714,7 +3713,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 	{
 		log_err("Error connecting to the server\n");
-		unlock_shm();
 		return false;
 	}
 
@@ -3728,7 +3726,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (send(sockfd, name, strlen(name), 0) < 0)
 	{
 		log_err("Error sending domain name\n");
-		unlock_shm();
 		return false;
 	}
 	else
@@ -3741,7 +3738,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		if (bytes_received < 0)
 		{
 			log_err("Error receiving data\n");
-			unlock_shm();
 			return false;
 		}
 
@@ -3751,15 +3747,16 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		bool received_bool = (buffer[0] == '1') ? true : false;
 		close(sockfd);
 		if (received_bool){
+			lock_shm();
 			const int dID = query->domainID;
 		domainsData *d = getDomain(dID, true);
 		char * new_domain = (char*)getstr(d->domainpos);
 			log_err("%s", new_domain);
 			query_blocked(query, domain, client, QUERY_DENYLIST);
+			unlock_shm();
 		}
 		return received_bool;
 	}
-	unlock_shm();
 	// Close the socket
 	close(sockfd);
 	return true;
