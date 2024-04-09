@@ -98,10 +98,8 @@ int send_from(int fd, int nowild, char *packet, size_t len,
 			cmptr->cmsg_level = IPPROTO_IPV6;
 		}
 	}
-	log_it(13);
 	while (retry_send(sendmsg(fd, &msg, 0)))
 		;
-	log_it(14);
 	if (errno != 0)
 	{
 #ifdef HAVE_LINUX_NETWORK
@@ -2008,7 +2006,7 @@ void receive_query(struct listener *listen, time_t now)
 				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, daemon->log_display_id);
 
 				if (modelblocked){
-					int ede = EDE_UNSET;
+					int ede = EDE_BLOCKED;
 					log_it(10);
 					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
 					log_it(11);
