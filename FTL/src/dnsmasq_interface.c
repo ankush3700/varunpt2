@@ -3676,6 +3676,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	const int qID = counters->queries;
 	// const unsigned int timeidx = getOverTimeID(querytimestamp);
 	queriesData* query1 = getQuery(qID, false);
+	const int domainID = findDomainID(domainString, true);
+	domainsData *domain = getDomain(domainID, true);
 	if(query1 == NULL)
 	{
 		// Encountered memory error, skip query
@@ -3687,6 +3689,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		return false;
 	}
 	else {
+		query1->domainID = domainID;
+		query1->clientID = clientID;
 		const int dID = query1 -> domainID;
 		domainsData *d = getDomain(dID, true);
 		if (d!=NULL){
@@ -3696,8 +3700,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		}
 	}
 
-	const int domainID = findDomainID(domainString, true);
-	domainsData *domain = getDomain(domainID, true);
+	
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
 	free(domainString);
 	unlock_shm();
