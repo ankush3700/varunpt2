@@ -3666,6 +3666,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	}
 	const int clientID = findClientID(clientIP, true, false);
 	const int domainID = findDomainID(domainString, true);
+	query->domainID = domainID;
+	query->clientID = clientID;
 	domainsData * domain = getDomain(domainID, true);
 	clientsData *client = getClient(clientID, true);
 	if(client == NULL)
@@ -3680,7 +3682,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
 	free(domainString);
-	unlock_shm();
 
 	if (whitelisted){
 		return true;
@@ -3743,17 +3744,15 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		bool received_bool = (buffer[0] == '1') ? true : false;
 		close(sockfd);
 		if (received_bool){
-			lock_shm();
 			const int dID = query->domainID;
 		domainsData *d = getDomain(dID, true);
 		char * new_domain = (char*)getstr(d->domainpos);
 			log_err("%s", new_domain);
 			query_blocked(query, domain, client, QUERY_DENYLIST);
-			unlock_shm();
 		}
 		return received_bool;
 	}
-
+	unlock_shm();
 	// Close the socket
 	close(sockfd);
 	return true;
