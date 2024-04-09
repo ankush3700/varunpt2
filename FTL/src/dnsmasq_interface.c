@@ -3768,7 +3768,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		close(sockfd);
 		if (received_bool){
 			lock_shm();
-			query_blocked(query, domain, client, QUERY_SPECIAL_DOMAIN);
+			query_blocked(query1, domain, client, QUERY_SPECIAL_DOMAIN);
 			unlock_shm();
 		}
 		return received_bool;
