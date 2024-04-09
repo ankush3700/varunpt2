@@ -3661,6 +3661,9 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 
 	lock_shm();
 	queriesData* query = getQuery(queryID, false);
+	if (query==NULL){
+		return false;
+	}
 	const int clientID = findClientID(clientIP, true, false);
 	clientsData *client = getClient(clientID, true);
 	if(client == NULL)
