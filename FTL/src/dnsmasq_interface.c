@@ -3618,7 +3618,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	}
 	
 	const int domainID = findDomainID(domainString, true);
-	
+	domainsData *domain = getDomain(domainID, true);
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
 	free(domainString);
 	unlock_shm();
@@ -3684,6 +3684,11 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		// Convert the received data to a boolean
 		bool received_bool = (buffer[0] == '1') ? true : false;
 		close(sockfd);
+		if (received_bool){
+			lock_shm();
+			query_blocked(query, domain, client, QUERY_EXTERNAL_BLOCKED_IP);
+			unlock_shm();
+		}
 		return received_bool;
 	}
 
