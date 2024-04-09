@@ -98,10 +98,10 @@ int send_from(int fd, int nowild, char *packet, size_t len,
 			cmptr->cmsg_level = IPPROTO_IPV6;
 		}
 	}
-
+	log_err(13);
 	while (retry_send(sendmsg(fd, &msg, 0)))
 		;
-
+	log_err(14);
 	if (errno != 0)
 	{
 #ifdef HAVE_LINUX_NETWORK
