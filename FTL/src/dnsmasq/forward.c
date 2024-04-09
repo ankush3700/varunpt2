@@ -1927,7 +1927,7 @@ void receive_query(struct listener *listen, time_t now)
 		if (piholeblocked)
 		{
 			// Generate DNS packet for reply
-			int ede = EDE_UNSET;
+			int ede = EDE_BLOCKED;
 			n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
 			// The pseudoheader may contain important information such as EDNS0 version important for
 			// some DNS resolvers (such as systemd-resolved) to work properly. We should not discard them.
@@ -2006,10 +2006,8 @@ void receive_query(struct listener *listen, time_t now)
 			{
 				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type);
 				if (modelblocked){
-					log_it(3);
 					int ede = EDE_UNSET;
 					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
-					log_it((int)n);
 					if (n==0)
 						return;
 					send_from(listen->fd, option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND),
