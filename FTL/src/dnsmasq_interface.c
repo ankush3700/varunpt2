@@ -3748,11 +3748,19 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		close(sockfd);
 		if (received_bool){
 			lock_shm();
-			const int dID = query->domainID;
-		domainsData *d = getDomain(dID, true);
-		char * new_domain = (char*)getstr(d->domainpos);
-			log_err("%s", new_domain);
-			query_blocked(query, domain, client, QUERY_DENYLIST);
+			query->flags.blocked = true;
+			query->upstreamID = 0;
+			query->ede = EDE_BLOCKED;
+			const int cacheID = query->domainID == findCacheID(domainID, clientID, query->type, true);
+			DNSCacheData *dns_cache = getDNSCache(cacheID, true);
+			if(dns_cache == NULL)
+				{
+					log_err("No memory available, skipping query analysis");
+					unlock_shm();
+					return false;
+				}
+			
+			query_blocked(query, domain, client, QUERY_EXTERNAL_BLOCKED_IP);
 			unlock_shm();
 		}
 		return received_bool;
