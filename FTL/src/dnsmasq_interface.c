@@ -3741,12 +3741,12 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 
 		// Convert the received data to a boolean
 		bool received_bool = (buffer[0] == '1') ? true : false;
-		const int dID = query->domainID;
-		domainsData *d = getDomain(dID, true);
-		char * new_domain = (char*)getstr(d->domainpos);
 		close(sockfd);
 		if (received_bool){
 			lock_shm();
+			const int dID = query->domainID;
+		domainsData *d = getDomain(dID, true);
+		char * new_domain = (char*)getstr(d->domainpos);
 			log_err("%s", new_domain);
 			query_blocked(query, domain, client, QUERY_DENYLIST);
 			unlock_shm();
