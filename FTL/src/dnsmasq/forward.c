@@ -2007,6 +2007,13 @@ void receive_query(struct listener *listen, time_t now)
 				blockdata_retrieve(saved_question, (size_t)n, header);
 				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type);
 
+				if (modelblocked){
+					log_it();
+					int ede = EDE_UNSET;
+					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
+				}
+				blockdata_retrieve(saved_question, (size_t)n, header);
+
 				if (forward_query(fd, &source_addr, &dst_addr, if_index,
 								  header, (size_t)n, ((char *)header) + udp_size, now, NULL, ad_reqd, do_bit, 0))
 					daemon->metrics[METRIC_DNS_QUERIES_FORWARDED]++;
