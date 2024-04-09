@@ -3584,10 +3584,69 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	// If the domain is credible, return false, else return true
 
 	name = check_dnsmasq_name(name);
+	const double querytimestamp = double_time();
+
+	// Save request time
+	struct timeval request;
+	gettimeofday(&request, 0);
 
 	if (is_pihole_domain(name)){
 		return false;
 	}
+
+	enum query_type querytype;
+	switch(qtype)
+	{
+		case T_A:
+			querytype = TYPE_A;
+			break;
+		case T_AAAA:
+			querytype = TYPE_AAAA;
+			break;
+		case T_ANY:
+			querytype = TYPE_ANY;
+			break;
+		case T_SRV:
+			querytype = TYPE_SRV;
+			break;
+		case T_SOA:
+			querytype = TYPE_SOA;
+			break;
+		case T_PTR:
+			querytype = TYPE_PTR;
+			break;
+		case T_TXT:
+			querytype = TYPE_TXT;
+			break;
+		case T_NAPTR:
+			querytype = TYPE_NAPTR;
+			break;
+		case T_MX:
+			querytype = TYPE_MX;
+			break;
+		case T_DS:
+			querytype = TYPE_DS;
+			break;
+		case T_RRSIG:
+			querytype = TYPE_RRSIG;
+			break;
+		case T_DNSKEY:
+			querytype = TYPE_DNSKEY;
+			break;
+		case T_NS:
+			querytype = TYPE_NS;
+			break;
+		case 64: // Scn. 2 of https://datatracker.ietf.org/doc/draft-ietf-dnsop-svcb-https/
+			querytype = TYPE_SVCB;
+			break;
+		case 65: // Scn. 2 of https://datatracker.ietf.org/doc/draft-ietf-dnsop-svcb-https/
+			querytype = TYPE_HTTPS;
+			break;
+		default:
+			querytype = TYPE_OTHER;
+			break;
+	}
+
 	char *domainString = strdup(name);
 	strtolower(domainString);
 
@@ -3613,14 +3672,30 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		unlock_shm();
 		return false;
 	}
+	
 	const int qID = counters->queries;
-	queriesData *somethingq = getQuery(qID, false);
-	const int something = somethingq->domainID;
-	domainsData *domain1 = getDomain(something, true);
-	if (domain1!=NULL){
-		char * p = (char*)getstr(domain1->domainpos);
-		log_err("%s", p);
+	const unsigned int timeidx = getOverTimeID(querytimestamp);
+	queriesData* query1 = getQuery(qID, false);
+	if(query1 == NULL)
+	{
+		// Encountered memory error, skip query
+		log_err("No memory available, skipping query analysis");
+		// Free allocated memory
+		free(domainString);
+		// Release thread lock
+		unlock_shm();
+		return false;
 	}
+	else {
+		const int dID = query1 -> domainID;
+		domainsData *d = getDomain(dID, true);
+		if (dID!=NULL){
+			char * name_of_domain = (char*)getstr(d->domainpos);
+			log_err("%s", name_of_domain);
+			log_err("%d", qID);
+		}
+	}
+
 	const int domainID = findDomainID(domainString, true);
 	domainsData *domain = getDomain(domainID, true);
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
