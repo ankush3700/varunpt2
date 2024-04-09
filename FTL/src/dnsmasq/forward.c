@@ -2008,9 +2008,10 @@ void receive_query(struct listener *listen, time_t now)
 				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type);
 
 				if (modelblocked){
-					log_it();
+					log_it(3);
 					int ede = EDE_UNSET;
 					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
+					log_it(4);
 				}
 				blockdata_retrieve(saved_question, (size_t)n, header);
 
