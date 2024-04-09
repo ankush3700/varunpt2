@@ -3782,3 +3782,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	return true;
 }
 
+void log_it(const int n){
+	log_err("%d", n);
+}
