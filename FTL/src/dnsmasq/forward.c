@@ -2005,7 +2005,6 @@ void receive_query(struct listener *listen, time_t now)
 		{
 			if (m == 0)
 			{
-				log_it(daemon->log_display_id);
 				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, daemon->log_display_id);
 
 				if (modelblocked){

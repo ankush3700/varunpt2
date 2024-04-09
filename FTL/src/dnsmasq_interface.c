@@ -3665,6 +3665,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		return false;
 	}
 	const int clientID = findClientID(clientIP, true, false);
+	const int domainID = findDomainID(domainString, true);
+	domainsData * domain = getDomain(domainID, true);
 	clientsData *client = getClient(clientID, true);
 	if(client == NULL)
 	{
@@ -3676,34 +3678,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		return false;
 	}
 	
-	const int qID = counters->queries;
-	// const unsigned int timeidx = getOverTimeID(querytimestamp);
-	queriesData* query1 = getQuery(qID, false);
-	const int domainID = findDomainID(domainString, true);
-	domainsData *domain = getDomain(domainID, true);
-	if(query1 == NULL)
-	{
-		// Encountered memory error, skip query
-		log_err("No memory available, skipping query analysis");
-		// Free allocated memory
-		free(domainString);
-		// Release thread lock
-		unlock_shm();
-		return false;
-	}
-	else {
-		query1->domainID = domainID;
-		query1->clientID = clientID;
-		const int dID = query1 -> domainID;
-		domainsData *d = getDomain(dID, true);
-		if (d!=NULL){
-			// char * name_of_domain = (char*)getstr(d->domainpos);
-			// log_err("%s", name_of_domain);
-			log_err("%d", qID);
-		}
-	}
-
-	
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
 	free(domainString);
 	unlock_shm();
@@ -3711,7 +3685,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (whitelisted){
 		return true;
 	}
-
+	log_err("%d", queryID);
 	// Create a socket
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)
@@ -3771,7 +3745,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		close(sockfd);
 		if (received_bool){
 			lock_shm();
-			query_blocked(query1, domain, client, QUERY_SPECIAL_DOMAIN);
+			query_blocked(query, domain, client, QUERY_SPECIAL_DOMAIN);
 			unlock_shm();
 		}
 		return received_bool;
