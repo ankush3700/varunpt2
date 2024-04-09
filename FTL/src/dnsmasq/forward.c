@@ -1575,6 +1575,7 @@ void receive_query(struct listener *listen, time_t now)
 	/************ Pi-hole modification ************/
 	bool piholeblocked = false;
 	bool modelblocked = false;
+	const int q = daemon->log_display_id;
 	/**********************************************/
 
 	/* packet buffer overwritten */
@@ -1807,8 +1808,9 @@ void receive_query(struct listener *listen, time_t now)
 #endif
 		log_query_mysockaddr(F_QUERY | F_FORWARD, daemon->namebuff,
 							 &source_addr, auth_dns ? "auth" : "query", type);
+
 		piholeblocked = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
-									  &source_addr, auth_dns ? "auth" : "query", type, daemon->log_display_id, UDP);
+									  &source_addr, auth_dns ? "auth" : "query", type, q, UDP);
 		
 
 #ifdef HAVE_CONNTRACK
@@ -2004,7 +2006,7 @@ void receive_query(struct listener *listen, time_t now)
 		{
 			if (m == 0)
 			{
-				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, daemon->log_display_id);
+				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, q);
 				if (modelblocked){
 					int ede = EDE_UNSET;
 					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
