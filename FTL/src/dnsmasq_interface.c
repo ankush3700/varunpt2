@@ -84,7 +84,7 @@ static char *get_ptrname(struct in_addr *addr);
 static const char *check_dnsmasq_name(const char *name);
 static bool set_socket_timeout(int sockfd, int timeout_ms);
 static bool notBlocked(int clientID, int domainID, const unsigned short qtype);
-static void log_it();
+
 
 // Static blocking metadata
 static bool adbit = false;
@@ -3692,6 +3692,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 }
 
 
-static void log_it(){
+void log_it(){
 	log_err("Function called");
 }
