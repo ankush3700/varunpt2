@@ -3622,9 +3622,9 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if(q == NULL)
 	{
 		// Encountered memory error, skip query
-		logg("WARN: No memory available, skipping query analysis");
+		log_err("No memory available, skipping query analysis");
 		// Free allocated memory
-		free(domainString);
+		// free(domainString);
 		// Release thread lock
 		unlock_shm();
 		return false;
