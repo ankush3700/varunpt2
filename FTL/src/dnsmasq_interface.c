@@ -3689,7 +3689,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	else {
 		const int dID = query1 -> domainID;
 		domainsData *d = getDomain(dID, true);
-		if (dID!=NULL){
+		if (d!=NULL){
 			char * name_of_domain = (char*)getstr(d->domainpos);
 			log_err("%s", name_of_domain);
 			log_err("%d", qID);
