@@ -3685,7 +3685,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (whitelisted){
 		return true;
 	}
-	log_err("%d", queryID);
 	// Create a socket
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)
@@ -3742,9 +3741,13 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 
 		// Convert the received data to a boolean
 		bool received_bool = (buffer[0] == '1') ? true : false;
+		const int dID = query->domainID;
+		domainsData *d = getDomain(dID, true);
+		char * new_domain = (char*)getstr(domain->domainpos);
 		close(sockfd);
 		if (received_bool){
 			lock_shm();
+			log_err("%s", new_domain);
 			query_blocked(query, domain, client, QUERY_DENYLIST);
 			unlock_shm();
 		}
