@@ -2003,6 +2003,7 @@ void receive_query(struct listener *listen, time_t now)
 		{
 			if (m == 0)
 			{
+				blockdata_retrieve(saved_question, (size_t)n, header);
 				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, daemon->log_display_id);
 
 				if (modelblocked){
@@ -2018,7 +2019,7 @@ void receive_query(struct listener *listen, time_t now)
 					daemon->metrics[METRIC_DNS_LOCAL_ANSWERED]++;
 					return;
 				}
-				blockdata_retrieve(saved_question, (size_t)n, header);
+				
 
 
 				if (forward_query(fd, &source_addr, &dst_addr, if_index,
