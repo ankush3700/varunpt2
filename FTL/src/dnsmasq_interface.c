@@ -3584,7 +3584,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	// If the domain is credible, return false, else return true
 
 	name = check_dnsmasq_name(name);
-	const double querytimestamp = double_time();
+	// const double querytimestamp = double_time();
 
 	// Save request time
 	// struct timeval request;
@@ -3674,7 +3674,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	}
 	
 	const int qID = counters->queries;
-	const unsigned int timeidx = getOverTimeID(querytimestamp);
+	// const unsigned int timeidx = getOverTimeID(querytimestamp);
 	queriesData* query1 = getQuery(qID, false);
 	if(query1 == NULL)
 	{
