@@ -2009,11 +2009,14 @@ void receive_query(struct listener *listen, time_t now)
 
 				if (modelblocked){
 					int ede = EDE_UNSET;
+					log_it(10);
 					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
+					log_it(11);
 					if (n==0)
 						return;
 					send_from(listen->fd, option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND),
 					  (char *)header, (size_t)n, &source_addr, &dst_addr, if_index);
+					log_it(12);
 					daemon->metrics[METRIC_DNS_LOCAL_ANSWERED]++;
 					return;
 				}
