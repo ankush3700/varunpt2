@@ -3613,7 +3613,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		unlock_shm();
 		return false;
 	}
-	const int something = query->domainID;
+	const int qID = counters->queries;
+	const int something = qID->domainID;
 	domainsData *domain1 = getDomain(something, true);
 	if (domain1!=NULL){
 		char * p = (char*)getstr(domain1->domainpos);
