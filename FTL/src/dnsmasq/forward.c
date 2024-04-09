@@ -2004,7 +2004,7 @@ void receive_query(struct listener *listen, time_t now)
 		{
 			if (m == 0)
 			{
-				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type);
+				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, daemon->log_display_id);
 				if (modelblocked){
 					int ede = EDE_UNSET;
 					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);

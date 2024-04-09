@@ -3579,7 +3579,7 @@ bool notBlocked (int clientID, int domainID, const unsigned short qtype){
 }
 
 /* Changes */
-bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned short qtype){
+bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned short qtype, const int queryID){
 	// Sending domain name to localhost:5336 to check domain credibility
 	// If the domain is credible, return false, else return true
 
@@ -3601,8 +3601,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	}
 
 	lock_shm();
-	const int queryID = counters->queries;
-	if (queryID){
+	queriesData* query = getQuery(queryID, false);
+	if (query==NULL){
 		log_err("Unable to get queryid");
 	}
 	const int clientID = findClientID(clientIP, true, false);
