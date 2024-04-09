@@ -3617,6 +3617,19 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		return false;
 	}
 	
+	const int y = counters->queries;
+	queriesData* q = getQuery(y, false);
+	if(q == NULL)
+	{
+		// Encountered memory error, skip query
+		logg("WARN: No memory available, skipping query analysis");
+		// Free allocated memory
+		free(domainString);
+		// Release thread lock
+		unlock_shm();
+		return false;
+	}
+
 	const int domainID = findDomainID(domainString, true);
 	domainsData *domain = getDomain(domainID, true);
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
