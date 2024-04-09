@@ -3746,6 +3746,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		if (received_bool){
 			lock_shm();
 			query_blocked(query, domain, client, QUERY_DENYLIST);
+			log_err("%d", (query->status == QUERY_DENYLIST));
 			unlock_shm();
 		}
 		return received_bool;
