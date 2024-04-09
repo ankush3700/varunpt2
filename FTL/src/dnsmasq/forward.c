@@ -2009,7 +2009,7 @@ void receive_query(struct listener *listen, time_t now)
 					log_it(3);
 					int ede = EDE_UNSET;
 					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
-					log_it(4);
+					log_it((int)n);
 				}
 				blockdata_retrieve(saved_question, (size_t)n, header);
 
