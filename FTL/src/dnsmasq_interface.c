@@ -3692,6 +3692,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 }
 
 
-void log_it(){
+static void log_it(){
 	log_err("Function called");
 }
