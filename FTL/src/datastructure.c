@@ -1059,10 +1059,10 @@ void _query_set_status(queriesData *query, const enum query_status new_status, c
 	const int timeidx = getOverTimeID(query->timestamp);
 	if(is_blocked(old_status) && !init)
 		overTime[timeidx].blocked--;
-	if(is_blocked(new_status))
+	if(is_blocked(new_status)){
 		log_err("%d", (new_status==QUERY_DENYLIST));
 		overTime[timeidx].blocked++;
-
+	}
 	if((old_status == QUERY_CACHE || old_status == QUERY_CACHE_STALE) && !init)
 		overTime[timeidx].cached--;
 	if(new_status == QUERY_CACHE || new_status == QUERY_CACHE_STALE)
