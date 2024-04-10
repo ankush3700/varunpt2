@@ -2046,6 +2046,7 @@ static void FTL_reply(const unsigned int flags, const char *name, const union al
 		unlock_shm();
 		return;
 	}
+	log_err("%d", addr->log.ede);
 
 	// EDE analysis
 	if(addr && flags & (F_RCODE | F_SECSTAT) && addr->log.ede != EDE_UNSET)
