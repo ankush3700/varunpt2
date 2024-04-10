@@ -1953,6 +1953,7 @@ static void FTL_reply(const unsigned int flags, const char *name, const union al
 
 	// Check if this reply came from our local cache
 	bool cached = false;
+	log_err("Cached %u %u", flags, F_UPSTREAM);
 	if(!(flags & F_UPSTREAM))
 	{
 		cached = true;
@@ -1962,7 +1963,7 @@ static void FTL_reply(const unsigned int flags, const char *name, const union al
 		   (flags & F_REVERSE) || // cached answer to reverse request (PTR)
 		   (flags & F_RRNAME)) // cached answer to TXT query
 		{
-			log_err("Cached %u", flags); // Okay
+			; // Okay
 		}
 		else
 			log_debug(DEBUG_FLAGS, "***** Unknown cache query");
