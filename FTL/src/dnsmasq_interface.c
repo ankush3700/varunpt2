@@ -1962,7 +1962,7 @@ static void FTL_reply(const unsigned int flags, const char *name, const union al
 		   (flags & F_REVERSE) || // cached answer to reverse request (PTR)
 		   (flags & F_RRNAME)) // cached answer to TXT query
 		{
-			; // Okay
+			log_err("Cached %d", flags); // Okay
 		}
 		else
 			log_debug(DEBUG_FLAGS, "***** Unknown cache query");
