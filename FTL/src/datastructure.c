@@ -1060,6 +1060,7 @@ void _query_set_status(queriesData *query, const enum query_status new_status, c
 	if(is_blocked(old_status) && !init)
 		overTime[timeidx].blocked--;
 	if(is_blocked(new_status))
+		log_err(new_status);
 		overTime[timeidx].blocked++;
 
 	if((old_status == QUERY_CACHE || old_status == QUERY_CACHE_STALE) && !init)
