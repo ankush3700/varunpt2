@@ -1052,6 +1052,7 @@ void _query_set_status(queriesData *query, const enum query_status new_status, c
 		counters->status[old_status]--;
 		log_debug(DEBUG_STATUS, "status %d removed (!init), ID = %d, new count = %d", QUERY_UNKNOWN, query->id, counters->status[QUERY_UNKNOWN]);
 	}
+	log_err("%d", init);
 	counters->status[new_status]++;
 	log_debug(DEBUG_STATUS, "status %d set, ID = %d, new count = %d", new_status, query->id, counters->status[new_status]);
 
@@ -1065,7 +1066,6 @@ void _query_set_status(queriesData *query, const enum query_status new_status, c
 	if((old_status == QUERY_CACHE || old_status == QUERY_CACHE_STALE) && !init)
 		overTime[timeidx].cached--;
 	if(new_status == QUERY_CACHE || new_status == QUERY_CACHE_STALE){
-		log_err("Reached here");
 		overTime[timeidx].cached++;}
 
 	if(old_status == QUERY_FORWARDED && !init)
