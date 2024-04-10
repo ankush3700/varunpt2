@@ -3750,9 +3750,9 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		if (received_bool){
 			lock_shm();
 			query->flags.blocked = true;
-			query->upstreamID = 0;
+			// query->upstreamID = 0;
 			query->ede = EDE_BLOCKED;
-			const int cacheID = query->domainID == findCacheID(domainID, clientID, query->type, true);
+			const int cacheID = findCacheID(domainID, clientID, query->type, true);
 			DNSCacheData *dns_cache = getDNSCache(cacheID, true);
 			if(dns_cache == NULL)
 				{
@@ -3761,7 +3761,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 					return false;
 				}
 			
-			query_blocked(query, domain, client, QUERY_EXTERNAL_BLOCKED_IP);
+			query_blocked(query, domain, client, QUERY_DENYLIST);
 			unlock_shm();
 		}
 		return received_bool;
