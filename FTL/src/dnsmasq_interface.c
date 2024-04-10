@@ -2107,6 +2107,7 @@ static void FTL_reply(const unsigned int flags, const char *name, const union al
 			query_set_status(query, qs);
 
 		// Detect if returned IP indicates that this query was blocked
+		log_err("%d", (query->status == QUERY_DENYLIST));
 		const enum query_status new_status = detect_blocked_IP(flags, addr, query, domain);
 
 		// Update status of this query if detected as external blocking
