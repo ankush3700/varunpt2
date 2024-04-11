@@ -1040,6 +1040,7 @@ void _query_set_status(queriesData *query, const enum query_status new_status, c
 		return;
 
 	const enum query_status old_status = query->status;
+	log_err("OLD STATUS: %d", old_status);
 	if(old_status == new_status && !init)
 	{
 		// Nothing to do
