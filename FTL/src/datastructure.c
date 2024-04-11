@@ -1040,7 +1040,23 @@ void _query_set_status(queriesData *query, const enum query_status new_status, c
 		return;
 
 	const enum query_status old_status = query->status;
-	log_err("OLD STATUS: %d", old_status);
+	switch(old_status){
+		case(QUERY_CACHE):
+			log_err("This is cached");
+			break;
+		case(QUERY_DENYLIST):
+			log_err("This is cached");
+			break;
+		case(QUERY_GRAVITY):
+			log_err("This is cached");
+			break;
+		case(QUERY_IN_PROGRESS):
+			log_err("This is cached");
+			break;
+		default:
+			log_err("Something else");
+		
+	}
 	if(old_status == new_status && !init)
 	{
 		// Nothing to do
