@@ -3763,7 +3763,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 					unlock_shm();
 					return false;
 				}
-			
+			log_err("Old status: %d", (query->status == QUERY_CACHE));
 			query_blocked(query, domain, client, QUERY_DENYLIST);
 			unlock_shm();
 		}
