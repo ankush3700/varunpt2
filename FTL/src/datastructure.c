@@ -1053,6 +1053,52 @@ void _query_set_status(queriesData *query, const enum query_status new_status, c
 		case(QUERY_IN_PROGRESS):
 			log_err("This is cached");
 			break;
+		case(QUERY_UNKNOWN):
+			log_err("This is unknown");
+			break;
+		case(QUERY_FORWARDED):
+			log_err("This is cached");
+			break;
+		case(QUERY_REGEX):
+			log_err("This is cached");
+			break;
+		case(QUERY_EXTERNAL_BLOCKED_IP):
+			log_err("This is cached");
+			break;
+		case(QUERY_EXTERNAL_BLOCKED_NULL):
+			log_err("This is cached");
+			break;
+		case(QUERY_EXTERNAL_BLOCKED_NXRA):
+			log_err("This is unknown");
+			break;
+		case(QUERY_GRAVITY_CNAME):
+			log_err("This is cached");
+			break;
+		case(QUERY_REGEX_CNAME):
+			log_err("This is cached");
+			break;
+		case(QUERY_DENYLIST_CNAME):
+			log_err("This is cached");
+			break;
+		case(QUERY_RETRIED):
+			log_err("This is cached");
+			break;
+		case(QUERY_RETRIED_DNSSEC):
+			log_err("This is unknown");
+			break;
+
+		case(QUERY_DBBUSY):
+			log_err("This is cached");
+			break;
+		case(QUERY_SPECIAL_DOMAIN):
+			log_err("This is cached");
+			break;
+		case(QUERY_CACHE_STALE):
+			log_err("This is cached");
+			break;
+		case(QUERY_STATUS_MAX):
+			log_err("This is cached");
+			break;
 		default:
 			log_err("Something else");
 		
