@@ -3767,7 +3767,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 			query_blocked(query, domain, client, QUERY_DENYLIST);
 			unlock_shm();
 		}
-		free(buffer);
 		return received_bool;
 	}
 	// Close the socket
