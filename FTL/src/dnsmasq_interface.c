@@ -3610,8 +3610,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	}
 	const int clientID = findClientID(clientIP, true, false);
 	const int domainID = findDomainID(domainString, true);
-	query->domainID = domainID;
-	query->clientID = clientID;
+
 	domainsData * domain = getDomain(domainID, true);
 	clientsData *client = getClient(clientID, true);
 	if(client == NULL)
@@ -3693,7 +3692,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 			lock_shm();
 			const int cacheID = query->domainID == domainID && query->clientID == clientID ?
 	                    query->cacheID :
-	                    findCacheID(domainID, clientID, query->type, true);
+	                    findCacheID(domainID, clientID, qtype, true);
 			DNSCacheData *dns_cache = getDNSCache(cacheID, true);
 			if(dns_cache == NULL)
 				{
