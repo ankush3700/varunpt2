@@ -2015,7 +2015,7 @@ void receive_query(struct listener *listen, time_t now)
 					if (n==0)
 						return;
 					char * res = "Did i just log it";
-					log_query(F_SECSTAT, daemon->namebuff, &source_addr, res, 0);
+					log_query(F_SECSTAT, daemon->namebuff, &dst_addr, res, 0);
 					send_from(listen->fd, option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND),
 					  (char *)header, (size_t)n, &source_addr, &dst_addr, if_index);
 					// log_it(12);
