@@ -2026,8 +2026,6 @@ void receive_query(struct listener *listen, time_t now)
 							n = add_pseudoheader(header, n, ((unsigned char *)header) + udp_size,
 												 daemon->edns_pktsz, 0, NULL, 0, do_bit, 0);
 					}
-					char *res = "Did i just log it";
-					log_query(F_SECSTAT, daemon->namebuff, &dst_addr, res, 0);
 					send_from(listen->fd, option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND),
 							  (char *)header, (size_t)n, &source_addr, &dst_addr, if_index);
 					daemon->metrics[METRIC_DNS_LOCAL_ANSWERED]++;
