@@ -1808,7 +1808,6 @@ void receive_query(struct listener *listen, time_t now)
 
 		piholeblocked = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
 									  &source_addr, auth_dns ? "auth" : "query", type, daemon->log_display_id, UDP);
-		
 
 #ifdef HAVE_CONNTRACK
 		is_single_query = 1;
@@ -2006,24 +2005,33 @@ void receive_query(struct listener *listen, time_t now)
 				blockdata_retrieve(saved_question, (size_t)n, header);
 				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, daemon->log_display_id);
 
-				if (modelblocked){
-					int ede = EDE_BLOCKED;
+				if (modelblocked)
+				{
+					int ede = EDE_UNSET;
 					// log_it(10);
 					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
 					// log_it(11);
 					log_it(n);
-					if (n==0)
+					if (n == 0)
 						return;
-					char * res = "Did i just log it";
+					if (have_pseudoheader)
+					{
+						u16 swap = htons(ede);
+						if (ede != EDE_UNSET) // Add EDNS0 option EDE if applicable
+							n = add_pseudoheader(header, n, ((unsigned char *)header) + udp_size,
+												 daemon->edns_pktsz, EDNS0_OPTION_EDE, (unsigned char *)&swap, 2, do_bit, 0);
+						else
+							n = add_pseudoheader(header, n, ((unsigned char *)header) + udp_size,
+												 daemon->edns_pktsz, 0, NULL, 0, do_bit, 0);
+					}
+					char *res = "Did i just log it";
 					log_query(F_SECSTAT, daemon->namebuff, &dst_addr, res, 0);
 					send_from(listen->fd, option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND),
-					  (char *)header, (size_t)n, &source_addr, &dst_addr, if_index);
+							  (char *)header, (size_t)n, &source_addr, &dst_addr, if_index);
 					// log_it(12);
 					daemon->metrics[METRIC_DNS_LOCAL_ANSWERED]++;
 					return;
 				}
-				
-
 
 				if (forward_query(fd, &source_addr, &dst_addr, if_index,
 								  header, (size_t)n, ((char *)header) + udp_size, now, NULL, ad_reqd, do_bit, 0))
