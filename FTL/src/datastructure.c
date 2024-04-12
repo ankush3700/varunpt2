@@ -1040,69 +1040,6 @@ void _query_set_status(queriesData *query, const enum query_status new_status, c
 		return;
 
 	const enum query_status old_status = query->status;
-	switch(old_status){
-		case(QUERY_CACHE):
-			log_err("This is cached");
-			break;
-		case(QUERY_DENYLIST):
-			log_err("This is deny");
-			break;
-		case(QUERY_GRAVITY):
-			log_err("This is gravity");
-			break;
-		case(QUERY_IN_PROGRESS):
-			log_err("This is in progress");
-			break;
-		case(QUERY_UNKNOWN):
-			log_err("This is unknown");
-			break;
-		case(QUERY_FORWARDED):
-			log_err("This is forwarded");
-			break;
-		case(QUERY_REGEX):
-			log_err("This is regex");
-			break;
-		case(QUERY_EXTERNAL_BLOCKED_IP):
-			log_err("This is blocked ip");
-			break;
-		case(QUERY_EXTERNAL_BLOCKED_NULL):
-			log_err("This is blocked null");
-			break;
-		case(QUERY_EXTERNAL_BLOCKED_NXRA):
-			log_err("This is blocked ext");
-			break;
-		case(QUERY_GRAVITY_CNAME):
-			log_err("This is gravity cname");
-			break;
-		case(QUERY_REGEX_CNAME):
-			log_err("This is regex cname");
-			break;
-		case(QUERY_DENYLIST_CNAME):
-			log_err("This is dney cnmae");
-			break;
-		case(QUERY_RETRIED):
-			log_err("This is retried");
-			break;
-		case(QUERY_RETRIED_DNSSEC):
-			log_err("This is retried 2");
-			break;
-
-		case(QUERY_DBBUSY):
-			log_err("This is busy");
-			break;
-		case(QUERY_SPECIAL_DOMAIN):
-			log_err("This is special");
-			break;
-		case(QUERY_CACHE_STALE):
-			log_err("This is stale");
-			break;
-		case(QUERY_STATUS_MAX):
-			log_err("This is max");
-			break;
-		default:
-			log_err("Something else");
-		
-	}
 	if(old_status == new_status && !init)
 	{
 		// Nothing to do

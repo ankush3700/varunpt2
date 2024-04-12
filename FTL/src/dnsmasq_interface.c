@@ -83,7 +83,9 @@ static void _query_set_dnssec(queriesData *query, const enum dnssec_status dnsse
 static char *get_ptrname(struct in_addr *addr);
 static const char *check_dnsmasq_name(const char *name);
 static bool set_socket_timeout(int sockfd, int timeout_ms);
+/************* ISRO ***********/
 static bool notBlocked(int clientID, int domainID, const unsigned short qtype);
+/******************************/
 
 
 // Static blocking metadata
@@ -1953,7 +1955,6 @@ static void FTL_reply(const unsigned int flags, const char *name, const union al
 
 	// Check if this reply came from our local cache
 	bool cached = false;
-	log_err("Cached %u %u", flags, F_UPSTREAM);
 	if(!(flags & F_UPSTREAM))
 	{
 		cached = true;
@@ -1963,7 +1964,7 @@ static void FTL_reply(const unsigned int flags, const char *name, const union al
 		   (flags & F_REVERSE) || // cached answer to reverse request (PTR)
 		   (flags & F_RRNAME)) // cached answer to TXT query
 		{
-			log_err("came here"); // Okay
+			; // Okay
 		}
 		else
 			log_debug(DEBUG_FLAGS, "***** Unknown cache query");
@@ -2051,7 +2052,6 @@ static void FTL_reply(const unsigned int flags, const char *name, const union al
 	// EDE analysis
 	if(addr && flags & (F_RCODE | F_SECSTAT) && addr->log.ede != EDE_UNSET)
 	{
-		log_err("%d", addr->log.ede);
 		query->ede = addr->log.ede;
 		log_debug(DEBUG_QUERIES, "     EDE (1): %s (%d)", edestr(addr->log.ede), addr->log.ede);
 	}
@@ -3537,6 +3537,8 @@ void get_dnsmasq_metrics_obj(cJSON *json)
 		cJSON_AddNumberToObject(json, get_metric_name(i), daemon->metrics[i]);
 }
 
+
+/**************** ISRO ********************/
 bool notBlocked (int clientID, int domainID, const unsigned short qtype){
 	if(get_blockingstatus() == BLOCKING_DISABLED)
 	{
@@ -3568,7 +3570,6 @@ bool notBlocked (int clientID, int domainID, const unsigned short qtype){
 
 	if (blockingStatus == ALLOWED){
 		log_debug(DEBUG_QUERIES, "%s is known as not to be blocked (allowed)", domainstr);
-		log_info("This query is allowd");
 		return true;
 	}
 	domainstr = strdup(domainstr);
@@ -3577,81 +3578,18 @@ bool notBlocked (int clientID, int domainID, const unsigned short qtype){
 	if (!whitelisted){
 		whitelisted = in_regex(domainstr, dns_cache, client->id, REGEX_ALLOW);
 	}
-	log_info("%d", whitelisted);
 
 	free(domainstr);
 	return whitelisted;
 
 }
 
-/* Changes */
 bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned short qtype, const int queryID){
 	// Sending domain name to localhost:5336 to check domain credibility
 	// If the domain is credible, return false, else return true
 
 	name = check_dnsmasq_name(name);
-	// const double querytimestamp = double_time();
-
-	// Save request time
-	// struct timeval request;
-	// gettimeofday(&request, 0);
-
-	// if (is_pihole_domain(name)){
-	// 	return false;
-	// }
-
-	// enum query_type querytype;
-	// switch(qtype)
-	// {
-	// 	case T_A:
-	// 		querytype = TYPE_A;
-	// 		break;
-	// 	case T_AAAA:
-	// 		querytype = TYPE_AAAA;
-	// 		break;
-	// 	case T_ANY:
-	// 		querytype = TYPE_ANY;
-	// 		break;
-	// 	case T_SRV:
-	// 		querytype = TYPE_SRV;
-	// 		break;
-	// 	case T_SOA:
-	// 		querytype = TYPE_SOA;
-	// 		break;
-	// 	case T_PTR:
-	// 		querytype = TYPE_PTR;
-	// 		break;
-	// 	case T_TXT:
-	// 		querytype = TYPE_TXT;
-	// 		break;
-	// 	case T_NAPTR:
-	// 		querytype = TYPE_NAPTR;
-	// 		break;
-	// 	case T_MX:
-	// 		querytype = TYPE_MX;
-	// 		break;
-	// 	case T_DS:
-	// 		querytype = TYPE_DS;
-	// 		break;
-	// 	case T_RRSIG:
-	// 		querytype = TYPE_RRSIG;
-	// 		break;
-	// 	case T_DNSKEY:
-	// 		querytype = TYPE_DNSKEY;
-	// 		break;
-	// 	case T_NS:
-	// 		querytype = TYPE_NS;
-	// 		break;
-	// 	case 64: // Scn. 2 of https://datatracker.ietf.org/doc/draft-ietf-dnsop-svcb-https/
-	// 		querytype = TYPE_SVCB;
-	// 		break;
-	// 	case 65: // Scn. 2 of https://datatracker.ietf.org/doc/draft-ietf-dnsop-svcb-https/
-	// 		querytype = TYPE_HTTPS;
-	// 		break;
-	// 	default:
-	// 		querytype = TYPE_OTHER;
-	// 		break;
-	// }
+	
 
 	char *domainString = strdup(name);
 	strtolower(domainString);
@@ -3724,7 +3662,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 
 	if (!set_socket_timeout(sockfd, TIMEOUT_MS)) {
         close(sockfd);
-		unlock_shm();
         return false;
     }
 
@@ -3751,7 +3688,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 
 		// Convert the received data to a boolean
 		bool received_bool = (buffer[0] == '1') ? true : false;
-		log_err("%s", buffer);
 		close(sockfd);
 		if (received_bool){
 			lock_shm();
@@ -3765,14 +3701,12 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 				}
 			blockingreason = "exactly denied";
 			log_debug(DEBUG_QUERIES, "%s is known as %s", name, blockingreason);
-			log_info("This is cached %d: ", (query->status==QUERY_UNKNOWN));
 			// Do not block if the entire query is to be permitted
 			// as something along the CNAME path hit the whitelist
 			if(!query->flags.allowed)
 			{
 				force_next_DNS_reply = dns_cache->force_reply;
 				query_blocked(query, domain, client, QUERY_DENYLIST);
-				return true;
 			}
 			unlock_shm();
 		}
@@ -3782,7 +3716,4 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	close(sockfd);
 	return true;
 }
-
-void log_it(const int n){
-	log_err("%d", n);
-}
+/****************************************/

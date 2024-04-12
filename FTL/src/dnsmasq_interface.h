@@ -52,6 +52,7 @@ bool FTL_unlink_DHCP_lease(const char *ipaddr, const char **hint);
 extern char *querystr(char *desc, unsigned short type);
 
 extern void FTL_dnsmasq_log(const char *payload, const int length);
+/************** ISRO *************/
 bool FTL_model_query(const char* domain, union mysockaddr *addr, const unsigned short qtype, const int queryID);
-void log_it(const int n);
+/*********************************/
 #endif // DNSMASQ_INTERFACE_H

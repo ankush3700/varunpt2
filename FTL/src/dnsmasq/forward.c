@@ -1572,6 +1572,9 @@ void receive_query(struct listener *listen, time_t now)
 
 	/************ Pi-hole modification ************/
 	bool piholeblocked = false;
+	/**********************************************/
+
+	/******************* ISRO *********************/
 	bool modelblocked = false;
 	/**********************************************/
 
@@ -2003,15 +2006,14 @@ void receive_query(struct listener *listen, time_t now)
 			if (m == 0)
 			{
 				blockdata_retrieve(saved_question, (size_t)n, header);
+				/************ ISRO *****************/
 				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, daemon->log_display_id);
 
 				if (modelblocked)
 				{
 					int ede = EDE_UNSET;
-					// log_it(10);
 					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
-					// log_it(11);
-					log_it(n);
+
 					if (n == 0)
 						return;
 					if (have_pseudoheader)
@@ -2028,10 +2030,10 @@ void receive_query(struct listener *listen, time_t now)
 					log_query(F_SECSTAT, daemon->namebuff, &dst_addr, res, 0);
 					send_from(listen->fd, option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND),
 							  (char *)header, (size_t)n, &source_addr, &dst_addr, if_index);
-					// log_it(12);
 					daemon->metrics[METRIC_DNS_LOCAL_ANSWERED]++;
 					return;
 				}
+				/****************************************/
 
 				if (forward_query(fd, &source_addr, &dst_addr, if_index,
 								  header, (size_t)n, ((char *)header) + udp_size, now, NULL, ad_reqd, do_bit, 0))
