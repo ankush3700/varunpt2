@@ -3692,7 +3692,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 
 	if (whitelisted){
 		
-		return true;
+		return false;
 	}
 	// Create a socket
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
