@@ -3716,4 +3716,11 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	close(sockfd);
 	return true;
 }
+
+void loginfo(const char *st){
+	log_info(st);
+}
+void logint(const int in){
+	log_info("%d", in);
+}
 /****************************************/
