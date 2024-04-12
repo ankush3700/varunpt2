@@ -3749,6 +3749,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 
 		// Convert the received data to a boolean
 		bool received_bool = (buffer[0] == '1') ? true : false;
+		log_err("%s", buffer);
 		close(sockfd);
 		if (received_bool){
 			lock_shm();
@@ -3766,6 +3767,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 			query_blocked(query, domain, client, QUERY_DENYLIST);
 			unlock_shm();
 		}
+		free(buffer);
 		return received_bool;
 	}
 	// Close the socket
