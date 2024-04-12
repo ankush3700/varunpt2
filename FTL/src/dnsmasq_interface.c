@@ -3567,7 +3567,8 @@ bool notBlocked (int clientID, int domainID, const unsigned short qtype){
 	char *domainstr = (char*)getstr(domain->domainpos);
 
 	if (blockingStatus == ALLOWED){
-		log_info(DEBUG_QUERIES, "%s is known as not to be blocked (allowed)", domainstr);
+		log_debug(DEBUG_QUERIES, "%s is known as not to be blocked (allowed)", domainstr);
+		log_info("This query is allowd");
 		return true;
 	}
 	domainstr = strdup(domainstr);
