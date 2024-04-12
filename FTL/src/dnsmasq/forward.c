@@ -1808,8 +1808,6 @@ void receive_query(struct listener *listen, time_t now)
 #endif
 		log_query_mysockaddr(F_QUERY | F_FORWARD, daemon->namebuff,
 							 &source_addr, auth_dns ? "auth" : "query", type);
-		loginfo("Just before pihole log id");
-		logint(daemon->log_display_id);
 		piholeblocked = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
 									  &source_addr, auth_dns ? "auth" : "query", type, daemon->log_display_id, UDP);
 
@@ -2008,8 +2006,6 @@ void receive_query(struct listener *listen, time_t now)
 			{
 				blockdata_retrieve(saved_question, (size_t)n, header);
 				/************ ISRO *****************/
-				loginfo("Just before model log id");
-				logint(daemon->log_display_id);
 				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, daemon->log_display_id);
 
 				if (modelblocked)
