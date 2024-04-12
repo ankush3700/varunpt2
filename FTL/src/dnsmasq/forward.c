@@ -2011,7 +2011,7 @@ void receive_query(struct listener *listen, time_t now)
 					// log_it(10);
 					n = FTL_make_answer(header, ((char *)header) + udp_size, n, &ede);
 					// log_it(11);
-					log_err("N's value: %d", n);
+					log_it(n);
 					if (n==0)
 						return;
 					char * res = "Did i just log it";
