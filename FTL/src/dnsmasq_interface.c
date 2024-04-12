@@ -3576,6 +3576,7 @@ bool notBlocked (int clientID, int domainID, const unsigned short qtype){
 	if (!whitelisted){
 		whitelisted = in_regex(domainstr, dns_cache, client->id, REGEX_ALLOW);
 	}
+	log_err("%d", whitelisted);
 
 	free(domainstr);
 	return whitelisted;
