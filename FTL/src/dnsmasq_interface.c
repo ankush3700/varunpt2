@@ -3755,9 +3755,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		close(sockfd);
 		if (received_bool){
 			lock_shm();
-			query->flags.blocked = true;
-			// query->upstreamID = 0;
-			query->ede = EDE_BLOCKED;
 			const int cacheID = findCacheID(domainID, clientID, query->type, true);
 			DNSCacheData *dns_cache = getDNSCache(cacheID, true);
 			if(dns_cache == NULL)
@@ -3766,7 +3763,17 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 					unlock_shm();
 					return false;
 				}
-			query_blocked(query, domain, client, QUERY_DENYLIST);
+			blockingreason = "exactly denied";
+			log_debug(DEBUG_QUERIES, "%s is known as %s", name, blockingreason);
+			log_info("This is cached %d: ", (query->status==QUERY_UNKNOWN));
+			// Do not block if the entire query is to be permitted
+			// as something along the CNAME path hit the whitelist
+			if(!query->flags.allowed)
+			{
+				force_next_DNS_reply = dns_cache->force_reply;
+				query_blocked(query, domain, client, QUERY_DENYLIST);
+				return true;
+			}
 			unlock_shm();
 		}
 		return received_bool;
