@@ -3630,7 +3630,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	                    findCacheID(domainID, clientID, query->type, true);
 				DNSCacheData *dns_cache = getDNSCache(cacheID, true);
 			log_info("Cache ID: %d", cacheID);
-			log_info("Cache status: %s", get_query_status_str(dns_cache->blocking_status));
+			const char* d = get_query_status_str(dns_cache->blocking_status);
+			log_info("Cache status: %s", d);
 
 	unlock_shm();
 
