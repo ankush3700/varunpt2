@@ -3625,6 +3625,10 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
 	free(domainString);
+	const int cacheID = query->domainID == domainID && query->clientID == clientID ?
+	                    query->cacheID :
+	                    findCacheID(domainID, clientID, query->type, true);
+			log_info("Cache ID: %d", cacheID);
 	unlock_shm();
 
 	if (whitelisted){
@@ -3692,10 +3696,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		close(sockfd);
 		if (received_bool){
 			lock_shm();
-			const int cacheID = query->domainID == domainID && query->clientID == clientID ?
-	                    query->cacheID :
-	                    findCacheID(domainID, clientID, query->type, true);
-			log_info("Cache ID: %d", cacheID);
 			DNSCacheData *dns_cache = getDNSCache(cacheID, true);
 			if(dns_cache == NULL)
 				{
