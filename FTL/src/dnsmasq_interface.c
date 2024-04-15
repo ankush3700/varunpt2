@@ -3668,6 +3668,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (send(sockfd, name, strlen(name), 0) < 0)
 	{
 		log_err("Error sending domain name\n");
+		close(sockfd);
 		return false;
 	}
 	else
@@ -3680,6 +3681,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		if (bytes_received < 0)
 		{
 			log_err("Error receiving data\n");
+			close(sockfd);
 			return false;
 		}
 
@@ -3692,7 +3694,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 			lock_shm();
 			const int cacheID = query->domainID == domainID && query->clientID == clientID ?
 	                    query->cacheID :
-	                    findCacheID(domainID, clientID, qtype, true);
+	                    findCacheID(domainID, clientID, query->type, true);
+			log_info("Cache ID: %d", cacheID);
 			DNSCacheData *dns_cache = getDNSCache(cacheID, true);
 			if(dns_cache == NULL)
 				{
