@@ -3604,7 +3604,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	}
 
 	lock_shm();
-	queriesData* query = getQuery(queryID, false);
+	queriesData* query = getQuery(queryID, true);
 	if (query==NULL){
 		return false;
 	}
@@ -3716,7 +3716,10 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 			query_blocked(query, domain, client, QUERY_DENYLIST);
 			
 		}
-		log_info("Query status = %d", query->status);
+		unlock_shm();
+		lock_shm();
+		query = getQuery(queryID, true);
+		log_info("Query status: %d", query->status);
 		unlock_shm();
 		return received_bool;
 	}
