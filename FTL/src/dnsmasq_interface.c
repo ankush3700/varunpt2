@@ -3718,6 +3718,8 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 			query_blocked(query, domain, client, QUERY_DENYLIST);
 			
 		}
+		query = getQuery(queryID, true);
+		log_err("Query-db %d", query->db);
 		unlock_shm();
 		return received_bool;
 	}
