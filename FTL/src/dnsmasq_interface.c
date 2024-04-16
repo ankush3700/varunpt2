@@ -3625,10 +3625,9 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
 	free(domainString);
-	unlock_shm();
 
 	if (whitelisted){
-		
+		unlock_shm();
 		return false;
 	}
 	// Create a socket
@@ -3636,6 +3635,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (sockfd < 0)
 	{
 		log_err("Error creating socket\n");
+		unlock_shm();
 		return false;
 	}
 	// Sending domain name to localhost:5336
@@ -3647,6 +3647,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (inet_pton(AF_INET, "127.0.0.1", &server_ip) <= 0)
 	{
 		log_err("Invalid server IP address\n");
+		unlock_shm();
 		return false;
 	}
 
@@ -3656,11 +3657,13 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 	{
 		log_err("Error connecting to the server\n");
+		unlock_shm();
 		return false;
 	}
 
 	if (!set_socket_timeout(sockfd, TIMEOUT_MS)) {
         close(sockfd);
+		unlock_shm();
         return false;
     }
 
@@ -3669,6 +3672,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	{
 		log_err("Error sending domain name\n");
 		close(sockfd);
+		unlock_shm();
 		return false;
 	}
 	else
@@ -3682,6 +3686,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		{
 			log_err("Error receiving data\n");
 			close(sockfd);
+			unlock_shm();
 			return false;
 		}
 
@@ -3691,7 +3696,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		bool received_bool = (buffer[0] == '1') ? true : false;
 		close(sockfd);
 		if (received_bool){
-			lock_shm();
 			const int cacheID = query->domainID == domainID && query->clientID == clientID ?
 	                    query->cacheID :
 	                    findCacheID(domainID, clientID, query->type, true);
@@ -3707,18 +3711,16 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 			log_debug(DEBUG_QUERIES, "%s is known as %s", name, blockingreason);
 			// Do not block if the entire query is to be permitted
 			// as something along the CNAME path hit the whitelist
-			if(!query->flags.allowed)
-			{
-				force_next_DNS_reply = dns_cache->force_reply;
-				query_blocked(query, domain, client, QUERY_DENYLIST);
-			}
-			unlock_shm();
+			force_next_DNS_reply = dns_cache->force_reply;
+			query->flags.allowed = false;
+			query_blocked(query, domain, client, QUERY_DENYLIST);
+			
 		}
+		log_info("Query status = %d", query->status);
+		unlock_shm();
 		return received_bool;
 	}
 	// Close the socket
-	close(sockfd);
-	return true;
 }
 void logint(const int n){
 	log_info("%d", n);
