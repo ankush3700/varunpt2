@@ -3717,12 +3717,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 			
 		}
 		unlock_shm();
-		lock_shm();
-		query = getQuery(queryID, true);
-		log_info("Query status: %d", query->status);
-		log_info("Query changed: %d", query->flags.database.changed);
-		log_info("Query stored: %d", query->flags.database.stored);
-		unlock_shm();
 		return received_bool;
 	}
 	// Close the socket

@@ -1410,7 +1410,6 @@ bool queries_to_database(void)
 		}
 
 		// STATUS
-		log_info("BKL: %d", query->status);
 		sqlite3_bind_int(query_stmt, 4, query->status);
 
 		// DOMAIN
