@@ -1812,7 +1812,7 @@ void receive_query(struct listener *listen, time_t now)
 		log_query_mysockaddr(F_QUERY | F_FORWARD, daemon->namebuff,
 							 &source_addr, auth_dns ? "auth" : "query", type);
 		model = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
-									  &source_addr, auth_dns ? "auth" : "query", type, daemon->log_display_id, UDP);
+							  &source_addr, auth_dns ? "auth" : "query", type, daemon->log_display_id, UDP);
 		piholeblocked = model.piholeblocked;
 #ifdef HAVE_CONNTRACK
 		is_single_query = 1;
@@ -2010,8 +2010,7 @@ void receive_query(struct listener *listen, time_t now)
 				blockdata_retrieve(saved_question, (size_t)n, header);
 
 				/************ ISRO *****************/
-				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, model.queryId);
-
+				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, model.queryId);
 				if (modelblocked)
 				{
 					int ede = EDE_UNSET;
@@ -2309,6 +2308,9 @@ unsigned char *tcp_request(int confd, time_t now,
 	/************ Pi-hole modification ************/
 	bool piholeblocked = false;
 	/**********************************************/
+	/***************** ISRO ***********************/
+	bool modelblocked = false;
+	/**********************************************/
 
 	if (!packet || getpeername(confd, (struct sockaddr *)&peer_addr, &peer_len) == -1)
 		return packet;
@@ -2413,7 +2415,7 @@ unsigned char *tcp_request(int confd, time_t now,
 									 &peer_addr, auth_dns ? "auth" : "query", qtype);
 
 				model = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
-											  &peer_addr, auth_dns ? "auth" : "query", qtype, daemon->log_display_id, TCP);
+									  &peer_addr, auth_dns ? "auth" : "query", qtype, daemon->log_display_id, TCP);
 				piholeblocked = model.piholeblocked;
 #ifdef HAVE_AUTH
 				/* find queries for zones we're authoritative for, and answer them directly */
@@ -2528,12 +2530,32 @@ unsigned char *tcp_request(int confd, time_t now,
 
 				if (m == 0 && saved_question)
 				{
+					
 					struct server *master;
 					int start;
 
 					blockdata_retrieve(saved_question, (size_t)saved_size, header);
 					size = saved_size;
-
+					modelblocked = FTL_model_query(daemon->namebuff, &peer_addr, model.queryId);
+					if (modelblocked)
+					{
+						int ede = EDE_UNSET;
+						stale = 0;
+						// Generate DNS packet for reply
+						m = FTL_make_answer(header, ((char *)header) + 65536, size, &ede);
+						// The pseudoheader may contain important information such as EDNS0 version important for
+						// some DNS resolvers (such as systemd-resolved) to work properly. We should not discard them.
+						if (have_pseudoheader && m > 0)
+						{
+							u16 swap = htons(ede);
+							if (ede != -1) // Add EDNS0 option EDE if applicable
+								m = add_pseudoheader(header, m, ((unsigned char *)header) + 65536,
+													 daemon->edns_pktsz, EDNS0_OPTION_EDE, (unsigned char *)&swap, 2, do_bit, 0);
+							else
+								m = add_pseudoheader(header, m, ((unsigned char *)header) + 65536,
+													 daemon->edns_pktsz, 0, NULL, 0, do_bit, 0);
+						}
+					}
 					if (lookup_domain(daemon->namebuff, gotname, &first, &last))
 						flags = is_local_answer(now, first, daemon->namebuff);
 					else

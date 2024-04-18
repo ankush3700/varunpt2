@@ -3589,13 +3589,14 @@ bool notBlocked (int clientID, int domainID, const unsigned short qtype){
 
 }
 
-bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned short qtype, const int queryID){
+bool FTL_model_query(const char* name, union mysockaddr *addr, const int queryID){
 	// Sending domain name to localhost:5336 to check domain credibility
 	// If the domain is credible, return false, else return true
 	if (get_blockingstatus()==BLOCKING_DISABLED){
 		return false;
 	}
 	name = check_dnsmasq_name(name);
+	unsigned short qtype;
 
 	char *domainString = strdup(name);
 	strtolower(domainString);
@@ -3614,6 +3615,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (query==NULL){
 		return false;
 	}
+	qtype = query->qtype;
 	const int clientID = findClientID(clientIP, true, false);
 	const int domainID = findDomainID(domainString, true);
 
