@@ -2682,7 +2682,7 @@ unsigned char *tcp_request(int confd, time_t now,
 			break;
 
 		/* In case of local answer or no connections made. */
-		if (m == 0 && !piholeblocked) // Pi-hole modified to ensure we don't provide local answers when dropping the reply
+		if (m == 0 && !piholeblocked && !modelblocked) // Pi-hole modified to ensure we don't provide local answers when dropping the reply
 		{
 			if (!(m = make_local_answer(flags, gotname, size, header, daemon->namebuff,
 										((char *)header) + 65536, first, last, ede)))
