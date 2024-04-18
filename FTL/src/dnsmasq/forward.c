@@ -2529,7 +2529,8 @@ unsigned char *tcp_request(int confd, time_t now,
 				check_log_writer(1);
 
 				if (m == 0 && saved_question)
-				{
+				{	
+					modelblocked = FTL_model_query(daemon->namebuff, &peer_addr, model.queryId);
 					if (modelblocked)
 					{
 						int ede = EDE_UNSET;
@@ -2556,7 +2557,6 @@ unsigned char *tcp_request(int confd, time_t now,
 
 						blockdata_retrieve(saved_question, (size_t)saved_size, header);
 						size = saved_size;
-						modelblocked = FTL_model_query(daemon->namebuff, &peer_addr, model.queryId);
 
 						if (lookup_domain(daemon->namebuff, gotname, &first, &last))
 							flags = is_local_answer(now, first, daemon->namebuff);
