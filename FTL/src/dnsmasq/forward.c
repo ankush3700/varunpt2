@@ -1541,6 +1541,9 @@ void receive_query(struct listener *listen, time_t now)
 	size_t m;
 	ssize_t n;
 	int if_index = 0, auth_dns = 0, do_bit = 0, have_pseudoheader = 0;
+	struct QueryContainer model;
+	model.piholeblocked = false;
+	model.queryId = -1;
 #ifdef HAVE_CONNTRACK
 	unsigned int mark = 0;
 	int have_mark = 0;
@@ -1808,9 +1811,9 @@ void receive_query(struct listener *listen, time_t now)
 #endif
 		log_query_mysockaddr(F_QUERY | F_FORWARD, daemon->namebuff,
 							 &source_addr, auth_dns ? "auth" : "query", type);
-		piholeblocked = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
+		model = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
 									  &source_addr, auth_dns ? "auth" : "query", type, daemon->log_display_id, UDP);
-
+		piholeblocked = model.piholeblocked;
 #ifdef HAVE_CONNTRACK
 		is_single_query = 1;
 #endif
@@ -2007,7 +2010,7 @@ void receive_query(struct listener *listen, time_t now)
 				blockdata_retrieve(saved_question, (size_t)n, header);
 
 				/************ ISRO *****************/
-				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, daemon->log_display_id);
+				modelblocked = FTL_model_query(daemon->namebuff, &source_addr, type, model.queryId);
 
 				if (modelblocked)
 				{
@@ -2270,6 +2273,9 @@ unsigned char *tcp_request(int confd, time_t now,
 {
 	size_t size = 0, saved_size = 0;
 	int norebind;
+	struct QueryContainer model;
+	model.piholeblocked = false;
+	model.queryId = -1;
 #ifdef HAVE_CONNTRACK
 	int is_single_query = 0, allowed = 1;
 #endif
@@ -2406,9 +2412,9 @@ unsigned char *tcp_request(int confd, time_t now,
 				log_query_mysockaddr(F_QUERY | F_FORWARD, daemon->namebuff,
 									 &peer_addr, auth_dns ? "auth" : "query", qtype);
 
-				piholeblocked = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
+				model = FTL_new_query(F_QUERY | F_FORWARD, daemon->namebuff,
 											  &peer_addr, auth_dns ? "auth" : "query", qtype, daemon->log_display_id, TCP);
-
+				piholeblocked = model.piholeblocked;
 #ifdef HAVE_AUTH
 				/* find queries for zones we're authoritative for, and answer them directly */
 				if (!auth_dns && !option_bool(OPT_LOCALISE))

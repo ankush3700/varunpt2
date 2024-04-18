@@ -516,7 +516,7 @@ static bool is_pihole_domain(const char *domain)
 	       (hostname_suffix && strcasecmp(domain, hostname_suffix) == 0);
 }
 
-bool _FTL_new_query(const unsigned int flags, const char *name,
+struct QueryContainer _FTL_new_query(const unsigned int flags, const char *name,
                     union mysockaddr *addr, char *arg,
                     const unsigned short qtype, const int id,
                     const enum protocol proto,
@@ -525,6 +525,9 @@ bool _FTL_new_query(const unsigned int flags, const char *name,
 	// Create new query in data structure
 
 	// Get timestamp
+	struct QueryContainer model;
+	model.piholeblocked = false;
+	model.queryId = -1;
 	const double querytimestamp = double_time();
 
 	// Save request time
@@ -614,13 +617,13 @@ bool _FTL_new_query(const unsigned int flags, const char *name,
 			          force_next_DNS_reply == REPLY_IP ?
 			            "interface-local IP address" :
 			            "NODATA due to missing iface address");
-
-			return true;
+			model.piholeblocked = true;
+			return model;
 		}
 		else
 		{
 			// Don't block this query
-			return false;
+			return model;
 		}
 	}
 
@@ -667,7 +670,7 @@ bool _FTL_new_query(const unsigned int flags, const char *name,
 	   (strcmp(clientIP, "127.0.0.1") == 0 || strcmp(clientIP, "::1") == 0))
 	{
 		free(domainString);
-		return false;
+		return model;
 	}
 
 	// Lock shared memory
@@ -686,7 +689,7 @@ bool _FTL_new_query(const unsigned int flags, const char *name,
 		free(domainString);
 		// Release thread lock
 		unlock_shm();
-		return false;
+		return model;
 	}
 
 	// Interface name is only available for regular queries, not for
@@ -720,7 +723,8 @@ bool _FTL_new_query(const unsigned int flags, const char *name,
 
 		// Do not further process this query, Pi-hole has never seen it
 		unlock_shm();
-		return true;
+		model.piholeblocked = true;
+		return model;
 	}
 
 	// Log new query if in debug mode
@@ -749,7 +753,7 @@ bool _FTL_new_query(const unsigned int flags, const char *name,
 		}
 		free(domainString);
 		unlock_shm();
-		return false;
+		return model;
 	}
 
 	// Go through already knows domains and see if it is one of them
@@ -765,10 +769,11 @@ bool _FTL_new_query(const unsigned int flags, const char *name,
 		free(domainString);
 		// Release thread lock
 		unlock_shm();
-		return false;
+		return model;
 	}
 
 	// Fill query object with available data
+	model.queryId = queryID;
 	query->magic = MAGICBYTE;
 	query->timestamp = querytimestamp;
 	query->type = querytype;
@@ -894,8 +899,8 @@ bool _FTL_new_query(const unsigned int flags, const char *name,
 
 	// Release thread lock
 	unlock_shm();
-
-	return blockDomain;
+	model.piholeblocked = blockDomain;
+	return model;
 }
 
 void _FTL_iface(struct irec *recviface, const union all_addr *addr, const sa_family_t addrfamily,
@@ -3589,9 +3594,10 @@ bool notBlocked (int clientID, int domainID, const unsigned short qtype){
 bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned short qtype, const int queryID){
 	// Sending domain name to localhost:5336 to check domain credibility
 	// If the domain is credible, return false, else return true
-
+	if (get_blockingstatus()==BLOCKING_DISABLED){
+		return false;
+	}
 	name = check_dnsmasq_name(name);
-	
 
 	char *domainString = strdup(name);
 	strtolower(domainString);
@@ -3627,9 +3633,9 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	
 	bool whitelisted = notBlocked(clientID, domainID, qtype);
 	free(domainString);
+	unlock_shm();
 
 	if (whitelisted){
-		unlock_shm();
 		return false;
 	}
 	// Create a socket
@@ -3637,7 +3643,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (sockfd < 0)
 	{
 		log_err("Error creating socket\n");
-		unlock_shm();
 		return false;
 	}
 	// Sending domain name to localhost:5336
@@ -3649,7 +3654,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (inet_pton(AF_INET, "127.0.0.1", &server_ip) <= 0)
 	{
 		log_err("Invalid server IP address\n");
-		unlock_shm();
 		return false;
 	}
 
@@ -3659,13 +3663,11 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 	{
 		log_err("Error connecting to the server\n");
-		unlock_shm();
 		return false;
 	}
 
 	if (!set_socket_timeout(sockfd, TIMEOUT_MS)) {
         close(sockfd);
-		unlock_shm();
         return false;
     }
 
@@ -3674,7 +3676,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 	{
 		log_err("Error sending domain name\n");
 		close(sockfd);
-		unlock_shm();
 		return false;
 	}
 	else
@@ -3688,7 +3689,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		{
 			log_err("Error receiving data\n");
 			close(sockfd);
-			unlock_shm();
 			return false;
 		}
 
@@ -3697,6 +3697,7 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 		// Convert the received data to a boolean
 		bool received_bool = (buffer[0] == '1') ? true : false;
 		close(sockfd);
+		lock_shm();
 		if (received_bool){
 			const int cacheID = query->domainID == domainID && query->clientID == clientID ?
 	                    query->cacheID :
@@ -3718,8 +3719,6 @@ bool FTL_model_query(const char* name, union mysockaddr *addr, const unsigned sh
 			query_blocked(query, domain, client, QUERY_DENYLIST);
 			
 		}
-		query = getQuery(queryID, true);
-		log_err("Query-db %d", query->db);
 		unlock_shm();
 		return received_bool;
 	}
