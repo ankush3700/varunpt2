@@ -1962,7 +1962,6 @@ static void FTL_reply(const unsigned int flags, const char *name, const union al
 	bool cached = false;
 	if(!(flags & F_UPSTREAM))
 	{	
-		log_info("Did we came here to see the cache");
 		cached = true;
 		if((flags & F_HOSTS) || // hostname.list, /etc/hosts and others
 		   ((flags & F_NAMEP) && (flags & F_DHCP)) || // DHCP server reply
@@ -2108,7 +2107,6 @@ static void FTL_reply(const unsigned int flags, const char *name, const union al
 	// to be from cache because of flags containing F_HOSTS)
 	if(cached)
 	{	
-		log_info("Did we came here");
 		// Set status of this query only if this is not a blocked query
 		if(!is_blocked(query->status))
 			query_set_status(query, qs);
